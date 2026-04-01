@@ -23,13 +23,13 @@ class MainActivity : FlutterActivity() {
                         val minTimeElapsed = call.argument<Int>("minimumTimeElapsed") ?: 60
                         val initialTime = call.argument<Long>("initialTime") ?: System.currentTimeMillis()
 
-                        val intent = Intent(this, DoomscrollService::class.java).apply {
+                        val intent = Intent(this, DoomscrollDetectionService::class.java).apply {
                             putStringArrayListExtra(
-                                DoomscrollService.EXTRA_PACKAGE_NAMES,
+                                DoomscrollDetectionService.EXTRA_PACKAGES_NAMES,
                                 ArrayList(packageNames)
                             )
-                            putExtra(DoomscrollService.EXTRA_MIN_TIME_ELAPSED, minTimeElapsed.toLong())
-                            putExtra(DoomscrollService.EXTRA_INITIAL_TIME, initialTime)
+                            putExtra(DoomscrollDetectionService.EXTRA_MIN_TIME_ELAPSED, minTimeElapsed.toLong())
+                            putExtra(DoomscrollDetectionService.EXTRA_INITIAL_TIME, initialTime)
                         }
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -42,7 +42,7 @@ class MainActivity : FlutterActivity() {
                     }
 
                     "stopService" -> {
-                        stopService(Intent(this, DoomscrollService::class.java))
+                        stopService(Intent(this, DoomscrollDetectionService::class.java))
                         result.success(null)
                     }
 
@@ -52,13 +52,13 @@ class MainActivity : FlutterActivity() {
                         val minTimeElapsed = call.argument<Int>("minimumTimeElapsed") ?: 60
                         val initialTime = call.argument<Long>("initialTime") ?: System.currentTimeMillis()
 
-                        val intent = Intent(this, DoomscrollService::class.java).apply {
+                        val intent = Intent(this, DoomscrollDetectionService::class.java).apply {
                             putStringArrayListExtra(
-                                DoomscrollService.EXTRA_PACKAGE_NAMES,
+                                DoomscrollDetectionService.EXTRA_PACKAGES_NAMES,
                                 ArrayList(packageNames)
                             )
-                            putExtra(DoomscrollService.EXTRA_MIN_TIME_ELAPSED, minTimeElapsed.toLong())
-                            putExtra(DoomscrollService.EXTRA_INITIAL_TIME, initialTime)
+                            putExtra(DoomscrollDetectionService.EXTRA_MIN_TIME_ELAPSED, minTimeElapsed.toLong())
+                            putExtra(DoomscrollDetectionService.EXTRA_INITIAL_TIME, initialTime)
                         }
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

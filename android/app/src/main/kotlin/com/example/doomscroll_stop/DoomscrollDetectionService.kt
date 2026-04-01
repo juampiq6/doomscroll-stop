@@ -24,13 +24,13 @@ class DoomscrollDetectionService : Service() {
         const val TAG = "DoomscrollDetectionService"
 
         // Intent extras keys
-        const val EXTRA_PACKAGE_NAMES = "package_names"
+        const val EXTRA_PACKAGES_NAMES = "packages_names"
         const val EXTRA_MIN_TIME_ELAPSED = "min_time_elapsed"
-        const val EXTRA_INITIAL_TIME = "initial_time"
+        const val EXTRA_INITIAL_TIME = "query_initial_time"
 
         // Notification channels
-        const val FOREGROUND_CHANNEL_ID = "doomscroll_foreground"
-        const val ALERT_CHANNEL_ID = "doomscroll_alert"
+        const val FOREGROUND_CHANNEL_ID = "doomscrolldetector_foreground"
+        const val ALERT_CHANNEL_ID = "doomscrolldetector_alert"
         const val FOREGROUND_NOTIF_ID = 1
         const val ALERT_NOTIF_BASE_ID = 1000
     }
@@ -237,7 +237,7 @@ class DoomscrollDetectionService : Service() {
     private fun sendDoomscrollAlert(pkg: String, appName: String) {
         val nm = getSystemService(NotificationManager::class.java)
         val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
-            .setContentTitle("Hey! Stop doomscrolling! 📵")
+            .setContentTitle("Hey! Enough doomscrolling! 📵")
             .setContentText("Hey! Stop doomscrolling in $appName")
             .setStyle(NotificationCompat.BigTextStyle()
                 .bigText("Hey! Stop doomscrolling in $appName"))
