@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:doomscroll_stop/method_channel_service/method_channel_service_interface.dart';
+import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'dart:typed_data';
 import 'package:doomscroll_stop/widgets/permission_banner.dart';
 import 'package:doomscroll_stop/widgets/service_status_banner.dart';
@@ -174,7 +174,9 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const PreferencesPage()),
+                        MaterialPageRoute(
+                          builder: (_) => const PreferencesPage(),
+                        ),
                       );
                     },
                     icon: const Icon(Icons.edit_note),

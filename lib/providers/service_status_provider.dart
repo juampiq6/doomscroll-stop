@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:doomscroll_stop/method_channel_service/method_channel_service_interface.dart';
+import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'package:get_it/get_it.dart';
 
 class ServiceStatusNotifier extends AsyncNotifier<bool> {
@@ -26,5 +26,5 @@ class ServiceStatusNotifier extends AsyncNotifier<bool> {
 
 final serviceStatusProvider =
     AsyncNotifierProvider<ServiceStatusNotifier, bool>(() {
-  return ServiceStatusNotifier();
-});
+      return ServiceStatusNotifier();
+    });

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:doomscroll_stop/method_channel_service/method_channel_service_interface.dart';
+import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 
 class AppStatsPage extends StatefulWidget {
   const AppStatsPage({super.key});
