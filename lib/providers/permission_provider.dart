@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:doomscroll_stop/permission_service/permission_service_interface.dart';
+import 'package:doomscroll_stop/services/permission_service/permission_service_interface.dart';
 import 'package:get_it/get_it.dart';
 
 enum PermissionType { notification, usage }
