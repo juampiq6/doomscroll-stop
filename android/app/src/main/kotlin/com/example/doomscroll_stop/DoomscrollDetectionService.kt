@@ -16,6 +16,9 @@ class DoomscrollDetectionService : Service() {
         const val TAG = "DoomscrollDetectionService"
         var isRunning = false
 
+        // Intent actions
+        const val ACTION_STOP_SERVICE = "com.example.doomscroll_stop.ACTION_STOP_SERVICE"
+
         // Intent extras keys
         const val EXTRA_APP_TIME_LIMITS = "app_time_limits"
     }
@@ -51,6 +54,12 @@ class DoomscrollDetectionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent != null) {
+            if (intent.action == ACTION_STOP_SERVICE) {
+                Log.d(TAG, "Stop action received via intent")
+                stopSelf()
+                return START_NOT_STICKY
+            }
+
             // Parse arguments from intent
             @Suppress("UNCHECKED_CAST")
             val newAppTimeLimitsMap =

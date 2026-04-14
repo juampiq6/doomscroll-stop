@@ -3,8 +3,9 @@ package com.example.doomscroll_stop
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 
@@ -32,7 +33,7 @@ class NotificationHelper(private val context: Context) {
                         )
                         .apply {
                             description = "Keeps the doomscroll tracker running in the background"
-                            setShowBadge(false)
+                            setShowBadge(true)
                         }
 
         // High-importance alert channel
@@ -52,12 +53,29 @@ class NotificationHelper(private val context: Context) {
     }
 
     fun buildForegroundNotification(): Notification {
+        val stopIntent =
+                Intent(context, DoomscrollDetectionService::class.java).apply {
+                    action = DoomscrollDetectionService.ACTION_STOP_SERVICE
+                }
+        val stopPendingIntent =
+                PendingIntent.getService(
+                        context,
+                        0,
+                        stopIntent,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+
         return NotificationCompat.Builder(context, FOREGROUND_CHANNEL_ID)
                 .setContentTitle("Doomscroll Tracker")
                 .setContentText("Watching your screen time…")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setOngoing(true)
                 .setSilent(true)
+                .addAction(
+                        android.R.drawable.ic_menu_close_clear_cancel,
+                        "Stop Tracking",
+                        stopPendingIntent
+                )
                 .build()
     }
 
