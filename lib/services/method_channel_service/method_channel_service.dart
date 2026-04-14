@@ -1,4 +1,4 @@
-import 'package:doomscroll_stop/method_channel_service/method_channel_service_interface.dart';
+import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'package:flutter/services.dart';
 
 class MethodChannelService implements MethodChannelServiceInterface {
