@@ -8,6 +8,7 @@ import 'package:doomscroll_stop/pages/app_stats_page.dart';
 import 'package:doomscroll_stop/providers/permission_provider.dart';
 import 'package:doomscroll_stop/providers/service_status_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:doomscroll_stop/pages/preferences_page.dart';
 
 class DoomscrollApp extends StatelessWidget {
   const DoomscrollApp({super.key});
@@ -114,10 +115,26 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                     MaterialPageRoute(builder: (_) => const AppStatsPage()),
                   );
                 }
+              } else if (value == 'prefs') {
+                if (context.mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PreferencesPage()),
+                  );
+                }
               }
             },
             itemBuilder: (BuildContext context) {
               return [
+                const PopupMenuItem<String>(
+                  value: 'prefs',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings, size: 20),
+                      SizedBox(width: 10),
+                      Text('Preferences'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem<String>(
                   value: 'stats',
                   child: Row(
@@ -153,6 +170,20 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                   const ServiceStatusBanner(),
                   const PermissionBanner(type: PermissionType.notification),
                   const PermissionBanner(type: PermissionType.usage),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PreferencesPage()),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_note),
+                    label: const Text('CONFIGURE TRACKED APPS'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                  const Divider(height: 48),
                   const Text(
                     '1. Pick an App',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
