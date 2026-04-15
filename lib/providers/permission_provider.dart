@@ -1,19 +1,7 @@
+import 'package:doomscroll_stop/models/permission_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doomscroll_stop/services/permission_service/permission_service_interface.dart';
 import 'package:get_it/get_it.dart';
-
-enum PermissionType { notification, usage }
-
-class PermissionState {
-  // 0 = granted, 1 = denied, 2 = permanently denied
-  final int status;
-  final String? error;
-
-  PermissionState({required this.status, this.error});
-
-  bool get isGranted => status == 0;
-  bool get isPermanentlyDenied => status == 2;
-}
 
 final permissionProvider =
     AsyncNotifierProvider.family<

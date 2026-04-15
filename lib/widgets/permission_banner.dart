@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:doomscroll_stop/models/permission_state.dart';
 import 'package:doomscroll_stop/providers/permission_provider.dart';
 
 class PermissionBanner extends ConsumerStatefulWidget {

@@ -1,17 +1,8 @@
+import 'package:doomscroll_stop/models/app_preferences_state.dart';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'package:get_it/get_it.dart';
-
-class AppPreferencesState {
-  final Map<String, int> appLimits; // packageName -> seconds
-
-  AppPreferencesState({this.appLimits = const {}});
-
-  AppPreferencesState copyWith({Map<String, int>? appLimits}) {
-    return AppPreferencesState(appLimits: appLimits ?? this.appLimits);
-  }
-}
 
 class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
   @override
