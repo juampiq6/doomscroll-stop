@@ -2,6 +2,7 @@ import 'package:doomscroll_stop/models/app_preferences_state.dart';
 import 'package:doomscroll_stop/repositories/preferences_repository.dart';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:doomscroll_stop/providers/doomscroll_background_service_provider.dart';
 import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'package:get_it/get_it.dart';
 
@@ -30,15 +31,14 @@ class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
 
     await GetIt.I.get<LocalStorageInterface>().savePreferences(currentValue);
 
-    final methodChannelService =
-        GetIt.instance<MethodChannelServiceInterface>();
-    methodChannelService.stopDetectionService();
+    final serviceNotifier = ref.read(
+      doomscrollBackgroundServiceProvider.notifier,
+    );
+    // Stop if running, then start if not empty
+    await serviceNotifier.stop();
 
     if (currentValue.isNotEmpty) {
-      // TODO: Create a better service provider so that we can also update the service status in the UI
-      await methodChannelService.startDetectionService(
-        appTimeLimits: currentValue,
-      );
+      await serviceNotifier.start(currentValue);
     }
   }
 }

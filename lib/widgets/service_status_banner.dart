@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:doomscroll_stop/providers/service_status_provider.dart';
+import 'package:doomscroll_stop/providers/doomscroll_background_service_provider.dart';
 
 class ServiceStatusBanner extends ConsumerStatefulWidget {
   const ServiceStatusBanner({super.key});
@@ -27,13 +27,13 @@ class _ServiceStatusBannerState extends ConsumerState<ServiceStatusBanner>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      ref.read(serviceStatusProvider.notifier).reload();
+      ref.invalidate(doomscrollBackgroundServiceProvider);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final serviceAsync = ref.watch(serviceStatusProvider);
+    final serviceAsync = ref.watch(doomscrollBackgroundServiceProvider);
 
     return serviceAsync.when(
       loading: () => const SizedBox.shrink(),
