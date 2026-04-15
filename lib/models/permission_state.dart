@@ -8,5 +8,6 @@ class PermissionState {
   PermissionState({required this.status, this.error});
 
   bool get isGranted => status == 0;
+  bool get isDenied => status == 1;
   bool get isPermanentlyDenied => status == 2;
 }

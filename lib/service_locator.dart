@@ -8,20 +8,20 @@ import 'package:doomscroll_stop/repositories/preferences_repository.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final _getIt = GetIt.I;
+final getIt = GetIt.I;
 
 void configureDependencies() {
-  _getIt.registerLazySingleton<MethodChannelServiceInterface>(
+  getIt.registerLazySingleton<MethodChannelServiceInterface>(
     MethodChannelService.new,
   );
-  _getIt.registerLazySingleton<PermissionServiceInterface>(
-    () => PermissionService(_getIt.get<MethodChannelServiceInterface>()),
+  getIt.registerLazySingleton<PermissionServiceInterface>(
+    () => PermissionService(getIt.get<MethodChannelServiceInterface>()),
   );
-  _getIt.registerSingletonAsync<LocalStorageInterface>(
+  getIt.registerSingletonAsync<LocalStorageInterface>(
     () async => LocalStorageService(await SharedPreferences.getInstance()),
   );
-  _getIt.registerLazySingletonAsync<PreferencesRepository>(
+  getIt.registerLazySingletonAsync<PreferencesRepository>(
     () async =>
-        PreferencesRepository(await _getIt.getAsync<LocalStorageInterface>()),
+        PreferencesRepository(await getIt.getAsync<LocalStorageInterface>()),
   );
 }
