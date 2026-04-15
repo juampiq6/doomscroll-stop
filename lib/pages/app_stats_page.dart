@@ -1,16 +1,19 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:doomscroll_stop/models/app_info.dart';
+import 'package:doomscroll_stop/providers/installed_apps_provider.dart';
 import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AppStatsPage extends StatefulWidget {
+class AppStatsPage extends ConsumerStatefulWidget {
   const AppStatsPage({super.key});
 
   @override
-  State<AppStatsPage> createState() => _AppStatsPageState();
+  ConsumerState<AppStatsPage> createState() => _AppStatsPageState();
 }
 
-class _AppStatsPageState extends State<AppStatsPage> {
+class _AppStatsPageState extends ConsumerState<AppStatsPage> {
   bool _loading = true;
   List<Map<String, dynamic>> _stats = [];
 
@@ -24,8 +27,8 @@ class _AppStatsPageState extends State<AppStatsPage> {
     final service = GetIt.instance<MethodChannelServiceInterface>();
 
     // Get apps to have names/icons
-    final apps = await service.getInstalledApps();
-    final appsMap = {for (var app in apps) app['packageName'] as String: app};
+    final apps = await ref.read(installedAppsProvider.future);
+    final appsMap = {for (var app in apps) app.packageName: app};
 
     // Get usage stats for the last 24 hours
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -45,9 +48,9 @@ class _AppStatsPageState extends State<AppStatsPage> {
         final timeMs = data['totalTimeInForeground'] as int? ?? 0;
         if (timeMs > 0) {
           statsList.add({
-            'appName': app['appName'],
+            'appName': app.appName,
             'packageName': pkg,
-            'icon': app['icon'],
+            'icon': app.icon,
             'totalTimeInForeground': timeMs,
           });
         }

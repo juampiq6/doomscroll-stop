@@ -1,14 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import 'package:doomscroll_stop/models/app_info.dart';
+import 'package:doomscroll_stop/models/permission_state.dart';
+import 'package:doomscroll_stop/providers/app_preferences_provider.dart';
+import 'package:doomscroll_stop/providers/permission_provider.dart';
+import 'package:doomscroll_stop/providers/service_status_provider.dart';
+import 'package:doomscroll_stop/providers/installed_apps_provider.dart';
 import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
-import 'dart:typed_data';
 import 'package:doomscroll_stop/widgets/permission_banner.dart';
 import 'package:doomscroll_stop/widgets/service_status_banner.dart';
 import 'package:doomscroll_stop/pages/app_stats_page.dart';
-import 'package:doomscroll_stop/providers/permission_provider.dart';
-import 'package:doomscroll_stop/providers/service_status_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doomscroll_stop/pages/preferences_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'dart:typed_data';
 
 class DoomscrollApp extends StatelessWidget {
   const DoomscrollApp({super.key});
@@ -38,33 +42,13 @@ class MyHomePage extends ConsumerStatefulWidget {
 }
 
 class _MyHomePageState extends ConsumerState<MyHomePage> {
-  List<Map<String, dynamic>> _apps = [];
-  Map<String, dynamic>? _selectedApp;
+  AppInfo? _selectedApp;
 
   final List<int> _minutesOptions = [1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 45, 60];
   int _selectedMinutes = 5;
 
   bool _isServiceRunning = false;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initApp();
-  }
-
-  Future<void> _initApp() async {
-    // Fetch installed apps using method channel service
-    final methodChannelService =
-        GetIt.instance<MethodChannelServiceInterface>();
-    List<Map<String, dynamic>> apps = await methodChannelService
-        .getInstalledApps();
-
-    setState(() {
-      _apps = apps;
-      _loading = false;
-    });
-  }
+  // Local state for app list is removed in favor of installedAppsProvider
 
   Future<void> _toggleService() async {
     if (_selectedApp == null) {
@@ -85,7 +69,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
       } else {
         await methodChannelService.startDetectionService(
           appTimeLimits: {
-            _selectedApp!['packageName'] as String: _selectedMinutes * 60,
+            _selectedApp!.packageName: _selectedMinutes * 60,
           },
         );
         setState(() => _isServiceRunning = true);
@@ -160,71 +144,73 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const ServiceStatusBanner(),
-                  const PermissionBanner(type: PermissionType.notification),
-                  const PermissionBanner(type: PermissionType.usage),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PreferencesPage(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.edit_note),
-                    label: const Text('CONFIGURE TRACKED APPS'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                    ),
+      body: ref.watch(installedAppsProvider).when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+        data: (apps) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const ServiceStatusBanner(),
+                const PermissionBanner(type: PermissionType.notification),
+                const PermissionBanner(type: PermissionType.usage),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PreferencesPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text('CONFIGURE TRACKED APPS'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
                   ),
-                  const Divider(height: 48),
-                  const Text(
-                    '1. Pick an App',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Divider(height: 48),
+                const Text(
+                  '1. Pick an App',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<AppInfo>(
+                  value: _selectedApp,
+                  isExpanded: true,
+                  hint: const Text('Select application...'),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<Map<String, dynamic>>(
-                    initialValue: _selectedApp,
-                    isExpanded: true,
-                    hint: const Text('Select application...'),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                    items: _apps.map((app) {
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: app,
-                        child: Row(
-                          children: [
-                            if (app['icon'] != null) ...[
-                              Image.memory(
-                                app['icon'] as Uint8List,
-                                width: 32,
-                                height: 32,
-                              ),
-                              const SizedBox(width: 10),
-                            ],
-                            Expanded(
-                              child: Text(
-                                app['appName'] as String,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                  items: apps.map((app) {
+                    return DropdownMenuItem<AppInfo>(
+                      value: app,
+                      child: Row(
+                        children: [
+                          if (app.icon != null) ...[
+                            Image.memory(
+                              app.icon!,
+                              width: 32,
+                              height: 32,
                             ),
+                            const SizedBox(width: 10),
                           ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() => _selectedApp = val);
-                    },
-                  ),
+                          Expanded(
+                            child: Text(
+                              app.appName,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() => _selectedApp = val);
+                  },
+                ),
 
                   const SizedBox(height: 30),
 
@@ -272,7 +258,9 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                   ),
                 ],
               ),
-            ),
+            );
+          },
+        ),
     );
   }
 }
