@@ -12,7 +12,7 @@ class MethodChannelService implements MethodChannelServiceInterface {
     required Map<String, int> appTimeLimits,
   }) async {
     return await platform.invokeMethod<void>('startService', {
-      'app_time_limits': appTimeLimits,
+      'appTimeLimits': appTimeLimits,
     });
   }
 
