@@ -85,6 +85,23 @@ class _ServiceStatusBannerState extends ConsumerState<ServiceStatusBanner>
                         fontSize: 13,
                       ),
                     ),
+                    if (isRunning)
+                      Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () {
+                            ref
+                                .read(
+                                  doomscrollBackgroundServiceProvider.notifier,
+                                )
+                                .stop();
+                          },
+                          child: const Text('Stop'),
+                        ),
+                      ),
                   ],
                 ),
               ),
