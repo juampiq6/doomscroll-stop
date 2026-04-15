@@ -92,11 +92,14 @@ class MainActivity : FlutterActivity() {
     ) {
         val beginTime = call.argument<Long>("beginTime") ?: 0L
         val endTime = call.argument<Long>("endTime") ?: System.currentTimeMillis()
+        val filteredAppPackages =
+                call.argument<List<String>>("filteredAppPackages")?.toSet() ?: null
 
         thread {
             try {
                 Log.d("MainActivity", "getUsageData: startTime=$beginTime, endTime=$endTime")
-                val usageData = usageStatsProvider.getUsageData(beginTime, endTime)
+                val usageData =
+                        usageStatsProvider.getUsageData(beginTime, endTime, filteredAppPackages)
 
                 // Convert UsageData to Map<String, Map<String, Any>>
                 val resultMap = mutableMapOf<String, Map<String, Any>>()

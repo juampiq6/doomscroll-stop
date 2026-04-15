@@ -43,11 +43,14 @@ class MethodChannelService implements MethodChannelServiceInterface {
   Future<Map<String, Map<String, dynamic>>> getAppUsageStats({
     required int beginTime,
     required int endTime,
+    Set<String>? filteredAppPackages,
   }) async {
-    final result = await platform.invokeMethod<Map<dynamic, dynamic>>(
-      'getAppUsageStats',
-      {'beginTime': beginTime, 'endTime': endTime},
-    );
+    final result = await platform
+        .invokeMethod<Map<dynamic, dynamic>>('getAppUsageStats', {
+          'beginTime': beginTime,
+          'endTime': endTime,
+          'filteredAppPackages': ?filteredAppPackages?.toList(),
+        });
 
     if (result == null) return {};
 

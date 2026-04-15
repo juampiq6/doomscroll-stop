@@ -17,7 +17,7 @@ class UsageStatsProvider(private val repository: UsageStatsRepository) {
             filteredAppPackages: Set<String>? = null,
             previousSessionStart: Map<String, Long> = emptyMap()
     ): UsageData {
-        val events = repository.queryEvents(startTime, endTime)
+        val events = repository.queryEvents(startTime, endTime, filteredAppPackages)
 
         val sessionStart = previousSessionStart.toMutableMap()
         val totalUsage = mutableMapOf<String, Long>()
