@@ -9,7 +9,7 @@ class LocalStorageService implements LocalStorageInterface {
 
   @override
   Future<void> savePreferences(Map<String, int> appLimits) async {
-    await _sharedPreferences.setString('appLimits', appLimits.toString());
+    await _sharedPreferences.setString('appLimits', jsonEncode(appLimits));
   }
 
   @override
