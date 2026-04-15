@@ -1,4 +1,5 @@
 import 'package:doomscroll_stop/models/app_preferences_state.dart';
+import 'package:doomscroll_stop/repositories/preferences_repository.dart';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
@@ -7,8 +8,7 @@ import 'package:get_it/get_it.dart';
 class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
   @override
   Future<AppPreferencesState> build() async {
-    final userPrefs = await GetIt.I
-        .get<LocalStorageInterface>()
+    final userPrefs = await (await GetIt.I.getAsync<PreferencesRepository>())
         .getPreferences();
     return AppPreferencesState(appLimits: userPrefs);
   }

@@ -22,6 +22,6 @@ void configureDependencies() {
   );
   _getIt.registerLazySingletonAsync<PreferencesRepository>(
     () async =>
-        PreferencesRepository(await _getIt.getAsync<LocalStorageService>()),
+        PreferencesRepository(await _getIt.getAsync<LocalStorageInterface>()),
   );
 }
