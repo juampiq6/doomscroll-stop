@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:doomscroll_stop/features/preferences/app_selection_sheet.dart';
+import 'package:doomscroll_stop/features/preferences/time_limit_edit_dialog.dart';
 import 'package:doomscroll_stop/models/app_info.dart';
 import 'package:doomscroll_stop/providers/app_preferences_provider.dart';
 import 'package:doomscroll_stop/providers/installed_apps_provider.dart';
-import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
-import 'package:get_it/get_it.dart';
-import 'dart:typed_data';
 
 class PreferencesPage extends ConsumerStatefulWidget {
   const PreferencesPage({super.key});
@@ -15,58 +14,14 @@ class PreferencesPage extends ConsumerStatefulWidget {
 }
 
 class _PreferencesPageState extends ConsumerState<PreferencesPage> {
-// Local state for app list is removed in favor of installedAppsProvider
+  Future<void> _showAddAppSheet(List<AppInfo> apps) async {
+    final selection = await AppSelectionSheet.show(context, apps);
+    if (selection != null) {
+      final pkg = selection.$1;
+      final minutes = selection.$2;
 
-  void _showAddAppSheet(List<AppInfo> apps) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Select App to Track',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: apps.length,
-                    itemBuilder: (context, index) {
-                      final app = apps[index];
-                      final pkg = app.packageName;
-
-                      return ListTile(
-                        leading: app.icon != null
-                            ? Image.memory(app.icon!, width: 32)
-                            : const Icon(Icons.android),
-                        title: Text(app.appName),
-                        subtitle: Text(pkg),
-                        onTap: () {
-                          ref
-                              .read(appPreferencesProvider.notifier)
-                              .updateLimit(pkg, 300); // Default 5 mins
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+      ref.read(appPreferencesProvider.notifier).updateLimit(pkg, minutes * 60);
+    }
   }
 
   @override
@@ -122,7 +77,7 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                   final seconds = p.appLimits[pkg]!;
 
                   // Find app info
-                  final appInfo = apps.where((a) => a.packageName == pkg).firstOrNull;
+                  final appInfo = apps.firstWhere((a) => a.packageName == pkg);
 
                   return Card(
                     margin: const EdgeInsets.symmetric(
@@ -130,10 +85,10 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                       vertical: 8,
                     ),
                     child: ListTile(
-                      leading: appInfo?.icon != null
-                          ? Image.memory(appInfo!.icon!, width: 32)
+                      leading: appInfo.icon != null
+                          ? Image.memory(appInfo.icon!, width: 32)
                           : const Icon(Icons.android),
-                      title: Text(appInfo?.appName ?? pkg),
+                      title: Text(appInfo.appName),
                       subtitle: Text(
                         '${(seconds / 60).toStringAsFixed(1)} minutes',
                       ),
@@ -200,63 +155,13 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
     );
   }
 
-  void _editTimeLimit(String pkg, int currentSeconds) {
-    int minutes = currentSeconds ~/ 60;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Time Limit'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Set limit in minutes:'),
-              const SizedBox(height: 16),
-              StatefulBuilder(
-                builder: (context, setDialogState) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: minutes > 1
-                            ? () => setDialogState(() => minutes--)
-                            : null,
-                      ),
-                      Text(
-                        '$minutes min',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () => setDialogState(() => minutes++),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('CANCEL'),
-            ),
-            TextButton(
-              onPressed: () {
-                ref
-                    .read(appPreferencesProvider.notifier)
-                    .updateLimit(pkg, minutes * 60);
-                Navigator.pop(context);
-              },
-              child: const Text('SAVE'),
-            ),
-          ],
-        );
-      },
+  Future<void> _editTimeLimit(String pkg, int currentSeconds) async {
+    final minutes = await TimeLimitEditDialog.show(
+      context,
+      currentSeconds ~/ 60,
     );
+    if (minutes != null) {
+      ref.read(appPreferencesProvider.notifier).updateLimit(pkg, minutes * 60);
+    }
   }
 }

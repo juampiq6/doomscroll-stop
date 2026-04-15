@@ -3,8 +3,9 @@ import 'package:doomscroll_stop/repositories/preferences_repository.dart';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doomscroll_stop/providers/doomscroll_background_service_provider.dart';
-import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'package:get_it/get_it.dart';
+
+const maxMinutes = 300;
 
 class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
   @override
