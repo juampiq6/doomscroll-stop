@@ -19,6 +19,8 @@ class DefaultUsageStatsRepository(private val context: Context) : UsageStatsRepo
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
                                 filteredAppPackages != null
                 ) {
+                    // Reference:
+                    // https://developer.android.com/reference/android/app/usage/UsageEventsQuery.Builder
                     val query =
                             UsageEventsQuery.Builder(beginTime, endTime)
                                     .setPackageNames(*filteredAppPackages.toTypedArray())
