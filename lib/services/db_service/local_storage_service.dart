@@ -16,6 +16,6 @@ class LocalStorageService implements LocalStorageInterface {
   Future<Map<String, int>> getPreferences() async {
     final r = _sharedPreferences.getString('appLimits');
     if (r == null) return {};
-    return jsonDecode(r) as Map<String, int>;
+    return (jsonDecode(r) as Map<String, dynamic>).cast<String, int>();
   }
 }
