@@ -106,13 +106,9 @@ class MainActivity : FlutterActivity() {
                 val usageData =
                         usageStatsProvider.getUsageData(beginTime, endTime, filteredAppPackages)
 
-                // Convert UsageData to List<Map<String, Any>>
-                val resultList =
-                        usageData.map { (pkg, sessions) ->
-                            mapOf("packageName" to pkg, "sessions" to sessions.map { it.toMap() })
-                        }
+                val resultMap = usageData.mapValues { (_, sessions) -> sessions.map { it.toMap() } }
 
-                runOnUiThread { result.success(resultList) }
+                runOnUiThread { result.success(resultMap) }
             } catch (e: Exception) {
                 runOnUiThread { result.error("ERROR", e.message, null) }
             }

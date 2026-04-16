@@ -13,7 +13,7 @@ abstract interface class MethodChannelServiceInterface {
   Future<bool> isServiceRunning();
 
   // Filters query by packages names. Times should be in milli since epoch
-  Future<Map<String, Map<String, dynamic>>> getAppUsageStats({
+  Future<Map<String, List<Map<String, dynamic>>>> getAppUsageStats({
     required int beginTime,
     required int endTime,
     Set<String>? filteredAppPackages,
