@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:doomscroll_stop/providers/installed_apps_provider.dart';
 import 'package:doomscroll_stop/features/stats/app_sessions_detail_page.dart';
 import 'package:doomscroll_stop/providers/app_usage_provider.dart';
+import 'package:doomscroll_stop/providers/installed_apps_provider.dart';
+import 'package:doomscroll_stop/routes.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AppStatsPage extends ConsumerStatefulWidget {
@@ -71,21 +72,18 @@ class _AppStatsPageState extends ConsumerState<AppStatsPage> {
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AppSessionsDetailPage(
-                            appName: app.appName,
-                            packageName: app.packageName,
-                            sessions: usage.sessions,
-                            beginTime: state.beginTime,
-                            endTime: state.endTime,
-                            icon: app.icon,
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.sessionDetail,
+                      arguments: AppSessionDetailArgs(
+                        appName: app.appName,
+                        packageName: app.packageName,
+                        sessions: usage.sessions,
+                        beginTime: state.beginTime,
+                        endTime: state.endTime,
+                        icon: app.icon,
+                      ),
+                    ),
                     leading: app.icon != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(12),
