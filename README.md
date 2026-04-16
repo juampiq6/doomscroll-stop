@@ -16,6 +16,26 @@ A Flutter app that monitors selected apps usage on Android and sends alerts when
 
 ---
 
+## Running (or building the apk of) the app
+
+Install flutter from [flutter.dev](https://flutter.dev/docs/get-started/install)
+
+**Only works in Android**
+
+To run:
+```bash
+flutter run
+```
+
+To build the apk:
+```bash
+flutter build apk --release
+```
+
+Please accept grant all permissions (Notification Access and Usage Access) to the app when asked.
+
+---
+
 ## Flutter App
 
 ### Architecture
