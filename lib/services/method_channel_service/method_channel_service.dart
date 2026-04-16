@@ -51,7 +51,7 @@ class MethodChannelService implements MethodChannelServiceInterface {
         .invokeMethod<Map<dynamic, dynamic>>('getAppUsageStats', {
           'beginTime': beginTime,
           'endTime': endTime,
-          'filteredAppPackages': filteredAppPackages?.toList(),
+          'filteredAppPackages': ?filteredAppPackages?.toList(),
         });
 
     if (result == null) return {};
