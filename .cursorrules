@@ -1,0 +1,66 @@
+# Project-Specific AI Rules (.cursorrules)
+
+You are an expert Flutter developer working on the Doomscroll Stopper project. Adhere STRICTLY to the following rules for all code generation, refactoring, and architectural decisions.
+
+## 1. State Management: Riverpod
+- **Mandatory Framework:** ALWAYS use **Riverpod** (`flutter_riverpod`) for application state management.
+- **Provider Classes:** Use `AsyncNotifier` or `Notifier` for any non-trivial state logic.
+- **Naming Convention:** ALL provider variables MUST end with the suffix `Provider` (e.g., `appPreferencesProvider`).
+- **Focus:** Keep providers single-purpose and highly granular.
+
+## 2. Dependency Injection: GetIt
+- **Mandatory Registry:** ALWAYS use **GetIt** for singletons and dependency injection.
+- **Service Locator:** Register ALL dependencies in the central `lib/service_locator.dart` file.
+- **Interface-First:** ALWAYS inject the **Interface** (abstract class), never the implementation.
+  - *Example:* `final MyServiceInterface myService = getIt<MyServiceInterface>();`
+- **Mocks:** This strict interface usage is required to ensure swappable mocks in tests and UI mocking.
+
+## 3. Widget Architecture
+### Pure Leaf Widgets
+- **Strictly Dumb:** Leaf widgets MUST BE pure and contain ZERO business or complex logic.
+- **Primitive Inputs:** ONLY pass primitive types (String, int, bool) or simple visual constants to leaf widgets.
+- **No Models/Complex Data:** NEVER pass custom data classes, models, or complex objects into leaf widgets.
+
+### Avoid widget returning methods
+- Keep creating small widgets if needed, dont organize a screen into many widget returning methods. Move large widgets into a new file.
+
+### Component Organization
+- **Shared Widgets:** Place any widget used across multiple features in `lib/widgets/`.
+- **Feature-Specific Widgets:** Group screens and their dedicated widgets under `lib/features/<feature_name>/`.
+
+## 4. Services Layer
+- **Responsibility:** Services are the SOLE layer allowed to interact with external systems (Android MethodChannels, SharedPreferences, Native APIs).
+- **Interface Requirement:** Every service MUST implement an abstract interface class.
+- **Abstraction:** NEVER call native or storage APIs directly from providers or UI; wrap them in a service.
+
+## 5. Data Models and State
+- **Location:** ALL data structures, DTOs, and state models MUST reside in `lib/models/`.
+- **Immutable State:** ALL models and state classes MUST be immutable. Use only `copyWith` methods for state transitions.
+- **Logic-Free:** Keep models focused on data; include serialization (e.g., `jsonEncode/Decode`) ONLY if necessary.
+
+## 6. Directory Structure
+Ensure all new files follow this map:
+- `lib/features/`: UI screens and feature-specific components.
+- `lib/widgets/`: Project-wide reusable UI components.
+- `lib/models/`: Immutable data and state objects.
+- `lib/providers/`: Riverpod logic connecting Services/Models to UI.
+- `lib/services/`: System interfaces and implementations.
+
+## 7. Code Quality and Style
+- **Zero Warnings:** ALL generated code MUST adhere to `flutter_lints` and trigger near ZERO warnings or notes.
+- **Formatter:** Code MUST be formatted using `dart format`.
+- **Trailing Commas:** ALWAYS use trailing commas in widget trees, function arguments, and lists to ensure vertical formatting and clean git diffs.
+- **Safety:** ALWAYS perform null-safety checks and validate inputs (especially for Native APIs) to prevent runtime crashes.
+
+## 8. Testing Architecture
+- **Directory Structure:** ALL test files MUST reside in the `test/` directory, mirroring the exact structure of `lib/` (e.g., `lib/services/my_service.dart` -> `test/services/my_service_test.dart`).
+- **Naming Rule:** Every test file MUST end with `_test.dart`.
+- **Mocking Strategy:**
+  - ALWAYS use **Mocktail** for generating mock implementations of service interfaces.
+  - NEVER use real services or local storage in unit or widget tests.
+  - Register mocks in the `service_locator` during the `setUp` phase of each test.
+- **Unit Testing:** Focus on verifying the logic of Notifiers, Services, and Models in isolation.
+- **Widget Testing:**
+  - Use `pumpWidget` wrap in a `ProviderScope` to test components that depend on Riverpod providers.
+  - Verify that leaf widgets render correctly with varied primitive inputs.
+- **Golden Tests:** Use golden tests for complex UI components to prevent accidental visual regressions.
