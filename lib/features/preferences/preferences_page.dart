@@ -49,7 +49,7 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => Center(child: Text('Error: $err')),
             data: (p) {
-              if (p.appLimits.isEmpty) {
+              if (p.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -71,10 +71,10 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                 );
               }
               return ListView.builder(
-                itemCount: p.appLimits.length,
+                itemCount: p.length,
                 itemBuilder: (context, index) {
-                  final pkg = p.appLimits.keys.elementAt(index);
-                  final seconds = p.appLimits[pkg]!;
+                  final pkg = p.keys.elementAt(index);
+                  final seconds = p[pkg]!;
 
                   // Find app info
                   final appInfo = apps.firstWhere((a) => a.packageName == pkg);
@@ -128,7 +128,7 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
-            onPressed: prefs.asData?.value.appLimits.isEmpty ?? true
+            onPressed: prefs.asData?.value.isEmpty ?? true
                 ? null
                 : () async {
                     await ref

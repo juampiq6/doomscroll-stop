@@ -1,4 +1,3 @@
-import 'package:doomscroll_stop/models/app_preferences_state.dart';
 import 'package:doomscroll_stop/repositories/preferences_repository.dart';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,28 +7,28 @@ import 'package:get_it/get_it.dart';
 const maxMinutes = 300;
 const defaultAppJumpThresholdMs = 30000;
 
-class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
+class AppPreferencesNotifier extends AsyncNotifier<Map<String, int>> {
   @override
-  Future<AppPreferencesState> build() async {
+  Future<Map<String, int>> build() async {
     final userPrefs = await (await GetIt.I.getAsync<PreferencesRepository>())
         .getPreferences();
-    return AppPreferencesState(appLimits: userPrefs);
+    return userPrefs;
   }
 
   void updateLimit(String packageName, int seconds) {
-    final newLimits = Map<String, int>.from(state.value!.appLimits);
+    final newLimits = Map<String, int>.from(state.value!);
     newLimits[packageName] = seconds;
-    state = AsyncValue.data(state.value!.copyWith(appLimits: newLimits));
+    state = AsyncValue.data(state.value!);
   }
 
   void removeApp(String packageName) {
-    final newLimits = Map<String, int>.from(state.value!.appLimits);
+    final newLimits = Map<String, int>.from(state.value!);
     newLimits.remove(packageName);
-    state = AsyncValue.data(state.value!.copyWith(appLimits: newLimits));
+    state = AsyncValue.data(state.value!);
   }
 
   Future<void> saveAndApply() async {
-    final currentValue = state.value!.appLimits;
+    final currentValue = state.value!;
 
     await GetIt.I.get<LocalStorageInterface>().savePreferences(currentValue);
 
@@ -46,6 +45,6 @@ class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
 }
 
 final appPreferencesProvider =
-    AsyncNotifierProvider<AppPreferencesNotifier, AppPreferencesState>(
+    AsyncNotifierProvider<AppPreferencesNotifier, Map<String, int>>(
       AppPreferencesNotifier.new,
     );
