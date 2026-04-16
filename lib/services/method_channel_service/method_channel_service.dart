@@ -10,9 +10,11 @@ class MethodChannelService implements MethodChannelServiceInterface {
   @override
   Future<void> startDetectionService({
     required Map<String, int> appTimeLimits,
+    required int appJumpThresholdMs,
   }) async {
     return await platform.invokeMethod<void>('startService', {
       'appTimeLimits': appTimeLimits,
+      'appJumpThresholdMs': appJumpThresholdMs,
     });
   }
 
@@ -49,7 +51,7 @@ class MethodChannelService implements MethodChannelServiceInterface {
         .invokeMethod<Map<dynamic, dynamic>>('getAppUsageStats', {
           'beginTime': beginTime,
           'endTime': endTime,
-          'filteredAppPackages': ?filteredAppPackages?.toList(),
+          'filteredAppPackages': filteredAppPackages?.toList(),
         });
 
     if (result == null) return {};

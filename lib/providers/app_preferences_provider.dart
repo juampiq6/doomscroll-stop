@@ -6,6 +6,7 @@ import 'package:doomscroll_stop/providers/doomscroll_background_service_provider
 import 'package:get_it/get_it.dart';
 
 const maxMinutes = 300;
+const defaultAppJumpThresholdMs = 30000;
 
 class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
   @override
@@ -39,7 +40,7 @@ class AppPreferencesNotifier extends AsyncNotifier<AppPreferencesState> {
     await serviceNotifier.stop();
 
     if (currentValue.isNotEmpty) {
-      await serviceNotifier.start(currentValue);
+      await serviceNotifier.start(currentValue, defaultAppJumpThresholdMs);
     }
   }
 }

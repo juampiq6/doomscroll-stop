@@ -1,5 +1,8 @@
 abstract interface class MethodChannelServiceInterface {
-  Future<void> startDetectionService({required Map<String, int> appTimeLimits});
+  Future<void> startDetectionService({
+    required Map<String, int> appTimeLimits,
+    required int appJumpThresholdMs,
+  });
 
   Future<void> stopDetectionService();
 

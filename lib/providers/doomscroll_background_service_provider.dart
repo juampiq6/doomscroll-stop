@@ -18,11 +18,17 @@ class DoomscrollBackgroundServiceNotifier extends AsyncNotifier<bool> {
     return await service.isServiceRunning();
   }
 
-  Future<void> start(Map<String, int> appTimeLimits) async {
+  Future<void> start(
+    Map<String, int> appTimeLimits,
+    int appJumpThresholdMs,
+  ) async {
     state = const AsyncValue.loading();
     final service = GetIt.instance<MethodChannelServiceInterface>();
     state = await AsyncValue.guard(() async {
-      await service.startDetectionService(appTimeLimits: appTimeLimits);
+      await service.startDetectionService(
+        appTimeLimits: appTimeLimits,
+        appJumpThresholdMs: appJumpThresholdMs,
+      );
       return true;
     });
   }
