@@ -43,7 +43,7 @@ class PermissionNotifier extends AsyncNotifier<PermissionState> {
     } else {
       // Usage Permission
       try {
-        final usageGranted = await service.isUsagePermissionGranted();
+        final usageGranted = await service.hasUsagePermission();
         if (usageGranted) {
           return PermissionState(status: 0);
         } else {

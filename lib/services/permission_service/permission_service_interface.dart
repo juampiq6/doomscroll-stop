@@ -1,4 +1,5 @@
-abstract interface class PermissionServiceInterface {
+abstract interface class PermissionServiceInterface
+    implements AppUsagePermissionHandlerInterface {
   Future<NotificationPermissionStatus> notificationPermissionStatus();
   Future<void> openAppNotificationSettings();
 
@@ -8,8 +9,10 @@ abstract interface class PermissionServiceInterface {
   /// Throws [PermissionRestrictedException] if the permission is restricted by the OS.
   /// Returns true if granted or limited, false if denied.
   Future<bool> requestNotificationPermission();
+}
 
-  Future<bool> isUsagePermissionGranted();
+abstract interface class AppUsagePermissionHandlerInterface {
+  Future<bool> hasUsagePermission();
 
   Future<void> openUsageSettings();
 }
