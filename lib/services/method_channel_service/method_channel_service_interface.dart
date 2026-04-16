@@ -1,4 +1,7 @@
-abstract interface class MethodChannelServiceInterface {
+import 'package:doomscroll_stop/services/permission_service/permission_service_interface.dart';
+
+abstract interface class MethodChannelServiceInterface
+    implements AppUsagePermissionHandlerInterface {
   Future<void> startDetectionService({
     required Map<String, int> appTimeLimits,
     required int appJumpThresholdMs,
@@ -20,8 +23,4 @@ abstract interface class MethodChannelServiceInterface {
   });
 
   Future<void> testNotification();
-
-  Future<bool> hasUsagePermission();
-
-  Future<void> openUsageSettings();
 }

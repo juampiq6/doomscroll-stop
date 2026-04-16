@@ -1,11 +1,10 @@
-import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:doomscroll_stop/services/permission_service/permission_service_interface.dart';
 
 class PermissionService implements PermissionServiceInterface {
-  final MethodChannelServiceInterface _methodChannelService;
+  final AppUsagePermissionHandlerInterface _appUsagePermissionInterface;
 
-  PermissionService(this._methodChannelService);
+  PermissionService(this._appUsagePermissionInterface);
 
   @override
   Future<NotificationPermissionStatus> notificationPermissionStatus() async {
@@ -51,9 +50,9 @@ class PermissionService implements PermissionServiceInterface {
   }
 
   @override
-  Future<bool> isUsagePermissionGranted() async {
+  Future<bool> hasUsagePermission() async {
     try {
-      return await _methodChannelService.hasUsagePermission();
+      return await _appUsagePermissionInterface.hasUsagePermission();
     } catch (_) {
       return false;
     }
@@ -62,7 +61,7 @@ class PermissionService implements PermissionServiceInterface {
   @override
   Future<void> openUsageSettings() async {
     try {
-      await _methodChannelService.openUsageSettings();
+      await _appUsagePermissionInterface.openUsageSettings();
     } catch (_) {
       // Handle error if needed
     }

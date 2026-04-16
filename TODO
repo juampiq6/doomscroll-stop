@@ -1,4 +1,6 @@
 IMPORTANT:
+- Add tests!
+- Add configurable threshold for app jump detection (default 30s)
 - Sync usages with local db + backend:
     - Schedule an Android task to save the app sessions in local db (need for SQL?), use secure storage to prevent data leak?
     - When the user opens the app to check recent usage, sync with backend (backend needs a sum up of data, not all user app sessions data)
