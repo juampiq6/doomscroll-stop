@@ -66,7 +66,10 @@ class MainActivity : FlutterActivity() {
                             DoomscrollDetectionService.APP_TIME_LIMITS_PARAM,
                             HashMap(appTimeLimits)
                     )
-                    putExtra(DoomscrollDetectionService.APP_JUMP_THRESHOLD_PARAM, appJumpThresholdMs)
+                    putExtra(
+                            DoomscrollDetectionService.APP_JUMP_THRESHOLD_PARAM,
+                            appJumpThresholdMs
+                    )
                 }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -103,16 +106,7 @@ class MainActivity : FlutterActivity() {
                 val usageData =
                         usageStatsProvider.getUsageData(beginTime, endTime, filteredAppPackages)
 
-                // Convert UsageData to Map<String, Map<String, Any>>
-                val resultMap = mutableMapOf<String, Map<String, Any>>()
-
-                for ((pkg, usageMs) in usageData.totalUsage) {
-                    resultMap[pkg] =
-                            mapOf(
-                                    "totalTimeInForeground" to usageMs,
-                                    "hasInteraction" to (usageData.hasInteraction[pkg] ?: false)
-                            )
-                }
+                val resultMap = usageData.mapValues { (_, sessions) -> sessions.map { it.toMap() } }
 
                 runOnUiThread { result.success(resultMap) }
             } catch (e: Exception) {

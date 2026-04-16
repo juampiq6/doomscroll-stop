@@ -9,17 +9,17 @@ class UsageStatsProvider(private val repository: UsageStatsRepository) {
     // -------------------------------------------------------------------------
 
     /** Raw event for the service's real-time session tracking. */
-    data class AppEvent(
-            val packageName: String,
-            val eventType: Int,
-            val timestamp: Long
-    )
+    data class AppEvent(val packageName: String, val eventType: Int, val timestamp: Long)
 
-    /** Computed usage summary for on-demand queries (e.g. MainActivity). */
-    data class UsageData(
-            val totalUsage: Map<String, Long>,
-            val hasInteraction: Map<String, Boolean>
-    )
+    /** Individual session of app usage. */
+    data class AppSession(val startTime: Long, val stopTime: Long, val hasInteraction: Boolean) {
+        fun toMap() =
+                mapOf(
+                        "startTime" to startTime,
+                        "stopTime" to stopTime,
+                        "hasInteraction" to hasInteraction
+                )
+    }
 
     // -------------------------------------------------------------------------
     // Public API
@@ -29,8 +29,8 @@ class UsageStatsProvider(private val repository: UsageStatsRepository) {
      * Returns raw app lifecycle events for the given time window. Used by
      * [DoomscrollDetectionService] to drive its own session state machine.
      *
-     * Only ACTIVITY_RESUMED/MOVE_TO_FOREGROUND, ACTIVITY_PAUSED/MOVE_TO_BACKGROUND,
-     * and USER_INTERACTION events are included.
+     * Only ACTIVITY_RESUMED/MOVE_TO_FOREGROUND, ACTIVITY_PAUSED/MOVE_TO_BACKGROUND, and
+     * USER_INTERACTION events are included.
      */
     fun getEvents(
             startTime: Long,
@@ -46,14 +46,11 @@ class UsageStatsProvider(private val repository: UsageStatsRepository) {
 
             val type =
                     when (event.eventType) {
-                        UsageEvents.Event.ACTIVITY_RESUMED,
-                        UsageEvents.Event.MOVE_TO_FOREGROUND ->
+                        UsageEvents.Event.ACTIVITY_RESUMED, UsageEvents.Event.MOVE_TO_FOREGROUND ->
                                 UsageEvents.Event.ACTIVITY_RESUMED
-                        UsageEvents.Event.ACTIVITY_PAUSED,
-                        UsageEvents.Event.MOVE_TO_BACKGROUND ->
+                        UsageEvents.Event.ACTIVITY_PAUSED, UsageEvents.Event.MOVE_TO_BACKGROUND ->
                                 UsageEvents.Event.ACTIVITY_PAUSED
-                        UsageEvents.Event.USER_INTERACTION ->
-                                UsageEvents.Event.USER_INTERACTION
+                        UsageEvents.Event.USER_INTERACTION -> UsageEvents.Event.USER_INTERACTION
                         else -> continue
                     }
 
@@ -64,9 +61,7 @@ class UsageStatsProvider(private val repository: UsageStatsRepository) {
     }
 
     /**
-     * Computes total foreground time and interaction flags per package for the
-     * given time window. Self-contained — pairs RESUMED/PAUSED events internally
-     * and projects still-open sessions up to [endTime].
+     * Computes discrete usage sessions per package for the given time window.
      *
      * Used by [MainActivity.handleGetUsageStats] for on-demand usage queries.
      */
@@ -74,42 +69,46 @@ class UsageStatsProvider(private val repository: UsageStatsRepository) {
             startTime: Long,
             endTime: Long,
             filteredPackages: Set<String>? = null
-    ): UsageData {
+    ): Map<String, List<AppSession>> {
         val events = getEvents(startTime, endTime, filteredPackages)
 
-        val sessionStart = mutableMapOf<String, Long>()
-        val totalUsage = mutableMapOf<String, Long>()
-        val hasInteraction = mutableMapOf<String, Boolean>()
+        val activeSessionStart = mutableMapOf<String, Long>()
+        val activeSessionInteraction = mutableMapOf<String, Boolean>()
+        val resultSessions = mutableMapOf<String, MutableList<AppSession>>()
 
         for (event in events) {
+            val pkg = event.packageName
             when (event.eventType) {
                 UsageEvents.Event.ACTIVITY_RESUMED -> {
-                    sessionStart[event.packageName] = event.timestamp
+                    activeSessionStart[pkg] = event.timestamp
+                    activeSessionInteraction[pkg] = false
                 }
                 UsageEvents.Event.ACTIVITY_PAUSED -> {
-                    val start = sessionStart.remove(event.packageName)
+                    val start = activeSessionStart.remove(pkg)
+                    val interaction = activeSessionInteraction.remove(pkg) ?: false
                     if (start != null) {
-                        val duration = event.timestamp - start
-                        if (duration > 0) {
-                            totalUsage[event.packageName] =
-                                    (totalUsage[event.packageName] ?: 0L) + duration
-                        }
+                        resultSessions
+                                .getOrPut(pkg) { mutableListOf() }
+                                .add(AppSession(start, event.timestamp, interaction))
                     }
                 }
                 UsageEvents.Event.USER_INTERACTION -> {
-                    hasInteraction[event.packageName] = true
+                    // Only flag interaction if we have an active session for this package
+                    if (activeSessionStart.containsKey(pkg)) {
+                        activeSessionInteraction[pkg] = true
+                    }
                 }
             }
         }
 
-        // Project still-open sessions up to endTime
-        for ((pkg, start) in sessionStart) {
-            val duration = endTime - start
-            if (duration > 0) {
-                totalUsage[pkg] = (totalUsage[pkg] ?: 0L) + duration
-            }
+        // Add still-open sessions up to endTime
+        for ((pkg, start) in activeSessionStart) {
+            val interaction = activeSessionInteraction[pkg] ?: false
+            resultSessions
+                    .getOrPut(pkg) { mutableListOf() }
+                    .add(AppSession(start, endTime, interaction))
         }
 
-        return UsageData(totalUsage, hasInteraction)
+        return resultSessions
     }
 }
