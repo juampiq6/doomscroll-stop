@@ -1,0 +1,28 @@
+IMPORTANT:
+- Sync usages with local db + backend:
+    - Schedule an Android task to save the app sessions in local db (need for SQL?), use secure storage to prevent data leak?
+    - When the user opens the app to check recent usage, sync with backend (backend needs a sum up of data, not all user app sessions data)
+        Example structure: (sync a batch of them) 
+       {
+            "user_id": "user_124", (can be null)
+            "app_id": "com.spotify.music",
+            "date": "2026-04-16",
+            "total_seconds": 3600,
+            "hourly_distribution": {
+                "08": 600,
+                "09": 1200,
+                "12": 1800
+            }
+        }
+    - Data should be annonymized to comply with GDPR, unless user gives consent to save under their id (user will be able to see past usages and future personalized anayltics)
+    - Save preferences history to recommend percentil usages for each app
+- Improve local notification setup and actions:
+    - Currently the app will send notifications continuosly, the user should be able to pick to snooze it
+    - Investigate vibration patterns and special sounds to make the user recognize that its time to stop
+    - Change to USE_FULL_SCREEN_INTENT to make the user see it
+- Improve home stats
+    - Chart of apps used everyday for last month. Filter by time or percentage of total usage
+    - Filter by violation separation: 
+        - green (less than half)
+        - orange (more than half) 
+        - red (violated) with thicker border
