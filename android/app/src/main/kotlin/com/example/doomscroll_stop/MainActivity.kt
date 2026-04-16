@@ -58,13 +58,15 @@ class MainActivity : FlutterActivity() {
         }
 
         val appTimeLimits = call.argument<Map<String, Int>>("appTimeLimits") ?: emptyMap()
+        val appJumpThresholdMs = call.argument<Long>("appJumpThreshold") ?: 30000L
 
         val intent =
                 Intent(this, DoomscrollDetectionService::class.java).apply {
                     putExtra(
-                            DoomscrollDetectionService.EXTRA_APP_TIME_LIMITS,
+                            DoomscrollDetectionService.APP_TIME_LIMITS_PARAM,
                             HashMap(appTimeLimits)
                     )
+                    putExtra(DoomscrollDetectionService.APP_JUMP_THRESHOLD_PARAM, appJumpThresholdMs)
                 }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

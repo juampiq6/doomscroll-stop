@@ -10,6 +10,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Android Foreground Service that polls for usage events and delegates doomscroll detection to
+ * [DoomscrollDetector].
+ *
+ * This class handles only Android-specific concerns: lifecycle, foreground notification, intent
+ * parsing, coroutine scheduling, and firing alerts.
+ */
 class DoomscrollDetectionService : Service() {
 
     companion object {
@@ -20,27 +27,22 @@ class DoomscrollDetectionService : Service() {
         const val ACTION_STOP_SERVICE = "com.example.doomscroll_stop.ACTION_STOP_SERVICE"
 
         // Intent extras keys
-        const val EXTRA_APP_TIME_LIMITS = "app_time_limits"
+        const val APP_TIME_LIMITS_PARAM = "app_time_limits"
+        const val APP_JUMP_THRESHOLD_PARAM = "app_jump_threshold"
     }
 
-    // --- Service state (updated dynamically via onStartCommand) ---
-    @Volatile private var appTimeLimits: Map<String, Long> = emptyMap()
-    @Volatile private var lastQueryTime: Long = 0L
-    @Volatile private var activeSessions: Map<String, Long> = emptyMap()
-
+    /// Scheduled coroutine
     private var pollingJob: Job? = null
     private val serviceScope = CoroutineScope(Dispatchers.Default)
 
     private val usageStatsProvider by lazy { UsageStatsProvider(DefaultUsageStatsRepository(this)) }
     private val notificationHelper by lazy { NotificationHelper(this) }
+    private var detector: DoomscrollDetector? = null
 
-    // Track which packages have already been notified so we don't spam
-    private val notifiedPackages = mutableSetOf<String>()
+    /** Timestamp of the last event query. */
+    @Volatile private var lastQueryTime: Long = 0L
 
-    // -------------------------------------------------------------------------
-    // Lifecycle
-    // -------------------------------------------------------------------------
-
+    /// Lifecycle methods
     override fun onCreate() {
         super.onCreate()
         isRunning = true
@@ -63,16 +65,27 @@ class DoomscrollDetectionService : Service() {
             // Parse arguments from intent
             @Suppress("UNCHECKED_CAST")
             val newAppTimeLimitsMap =
-                    intent.getSerializableExtra(EXTRA_APP_TIME_LIMITS) as?
+                    intent.getSerializableExtra(APP_TIME_LIMITS_PARAM) as?
                             java.util.HashMap<String, Int>
 
-            if (newAppTimeLimitsMap == null) {
+            if (newAppTimeLimitsMap.isNullOrEmpty()) {
                 Log.e(TAG, "Failed to parse app_time_limits intent arguments. Stopping service.")
                 stopSelf()
                 return START_NOT_STICKY
             }
 
-            appTimeLimits = newAppTimeLimitsMap.mapValues { it.value.toLong() }
+            val appJumpThresholdMs =
+                    intent.getLongExtra(APP_JUMP_THRESHOLD_PARAM, 30000L)
+
+            detector =
+                    DoomscrollDetector(
+                            timeLimits = newAppTimeLimitsMap.mapValues { it.value.toLong() },
+                            appJumpThresholdMs = appJumpThresholdMs,
+                    )
+
+            if (lastQueryTime == 0L) {
+                lastQueryTime = System.currentTimeMillis()
+            }
 
             restartPollingLoop()
         }
@@ -88,107 +101,38 @@ class DoomscrollDetectionService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // -------------------------------------------------------------------------
-    // Adaptive polling loop
-    // -------------------------------------------------------------------------
-
+    /// Polling loop
     private fun restartPollingLoop() {
         pollingJob?.cancel()
         pollingJob =
                 serviceScope.launch {
                     while (true) {
+                        val d = detector ?: break
                         val now = System.currentTimeMillis()
-                        val usageData =
-                                usageStatsProvider.getUsageData(
+
+                        // 1. Query events since last check
+                        val events =
+                                usageStatsProvider.getEvents(
                                         lastQueryTime,
                                         now,
-                                        appTimeLimits.keys,
-                                        activeSessions
+                                        d.trackedPackages
                                 )
                         lastQueryTime = now
-                        activeSessions = usageData.sessionStart
 
-                        performCheck(usageData)
-                        val delayMs = calculateNextDelay(usageData)
+                        // 2. Process historical events (build session state)
+                        d.processEvents(events)
 
-                        Log.d(TAG, "Next poll in ${delayMs}ms")
-                        delay(delayMs)
+                        // 3. Live watchdog check
+                        val pkg = d.performCheck()
+
+                        // 4. Fire notifications for any new alerts
+                        if (pkg != null) {
+                            notificationHelper.sendDoomscrollAlert(pkg)
+                            d.restartSession(pkg, now)
+                        }
+
+                        delay(d.computeNextCheckDelay())
                     }
                 }
-    }
-
-    /**
-     * Computes time-in-app & tap detection for each tracked package, fires notifications where
-     * needed.
-     */
-    private fun performCheck(usageData: UsageStatsProvider.UsageData) {
-        val totalUsage = usageData.totalUsage
-        val hasInteraction = usageData.hasInteraction
-        val sessionStart = usageData.sessionStart
-
-        // Evaluate each tracked package
-        for ((pkg, timeLimit) in appTimeLimits) {
-            val appLimitMs = timeLimit * 1000L
-            val usageMs = totalUsage[pkg] ?: 0L
-
-            val tapped = hasInteraction[pkg] == true
-            val overThreshold = usageMs >= appLimitMs
-
-            Log.d(
-                    TAG,
-                    "[$pkg] usage=${usageMs}ms tapped=$tapped overThreshold=$overThreshold limit=$appLimitMs"
-            )
-
-            if (overThreshold && tapped && pkg !in notifiedPackages) {
-                notificationHelper.sendDoomscrollAlert(pkg)
-                notifiedPackages.add(pkg)
-            }
-
-            // Reset notification suppression if user has left the app (no session start)
-            if (pkg !in sessionStart && usageMs == 0L) {
-                notifiedPackages.remove(pkg)
-            }
-        }
-    }
-
-    /**
-     * Returns the next polling delay in milliseconds using adaptive logic:
-     *
-     * - Base delay = minimum limit / 2
-     * - If any app has usage > its limit/2:
-     * ```
-     *       nextDelay = (limit - usage) / 2   (clamped to ≥1s)
-     * ```
-     */
-    private fun calculateNextDelay(usageData: UsageStatsProvider.UsageData): Long {
-        val totalUsage = usageData.totalUsage
-        var nextDelayMs = Long.MAX_VALUE
-
-        // Evaluate each tracked package
-        for ((pkg, minTimeElapsed) in appTimeLimits) {
-            val minMs = minTimeElapsed * 1000L
-            val halfMinMs = minMs / 2L
-
-            val usageMs = totalUsage[pkg] ?: 0L
-
-            // Adaptive delay logic for this app
-            val appDelay =
-                    if (usageMs >= halfMinMs) {
-                        val remaining = minMs - usageMs
-                        (remaining / 2L).coerceAtLeast(1_000L) // minimum 1 second
-                    } else {
-                        halfMinMs.coerceAtLeast(5_000L) // minimum 5 seconds
-                    }
-
-            if (appDelay < nextDelayMs) {
-                nextDelayMs = appDelay
-            }
-        }
-
-        if (nextDelayMs == Long.MAX_VALUE) {
-            nextDelayMs = 5_000L
-        }
-
-        return nextDelayMs
     }
 }
