@@ -74,8 +74,7 @@ class DoomscrollDetectionService : Service() {
                 return START_NOT_STICKY
             }
 
-            val appJumpThresholdMs =
-                    intent.getLongExtra(APP_JUMP_THRESHOLD_PARAM, 30000L)
+            val appJumpThresholdMs = intent.getLongExtra(APP_JUMP_THRESHOLD_PARAM, 30000L)
 
             detector =
                     DoomscrollDetector(
@@ -112,18 +111,14 @@ class DoomscrollDetectionService : Service() {
 
                         // 1. Query events since last check
                         val events =
-                                usageStatsProvider.getEvents(
-                                        lastQueryTime,
-                                        now,
-                                        d.trackedPackages
-                                )
+                                usageStatsProvider.getEvents(lastQueryTime, now, d.trackedPackages)
                         lastQueryTime = now
 
                         // 2. Process historical events (build session state)
-                        d.processEvents(events)
+                        d.processEvents(events, now)
 
                         // 3. Live watchdog check
-                        val pkg = d.performCheck()
+                        val pkg = d.performCheck(now)
 
                         // 4. Fire notifications for any new alerts
                         if (pkg != null) {
@@ -131,7 +126,7 @@ class DoomscrollDetectionService : Service() {
                             d.restartSession(pkg, now)
                         }
 
-                        delay(d.computeNextCheckDelay())
+                        delay(d.computeNextCheckDelay(now))
                     }
                 }
     }
