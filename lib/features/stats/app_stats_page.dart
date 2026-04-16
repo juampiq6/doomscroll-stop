@@ -1,9 +1,7 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:doomscroll_stop/models/app_info.dart';
 import 'package:doomscroll_stop/providers/installed_apps_provider.dart';
-import 'package:doomscroll_stop/services/method_channel_service/method_channel_service_interface.dart';
+import 'package:doomscroll_stop/features/stats/app_sessions_detail_page.dart';
+import 'package:doomscroll_stop/providers/app_usage_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AppStatsPage extends ConsumerStatefulWidget {
@@ -14,64 +12,6 @@ class AppStatsPage extends ConsumerStatefulWidget {
 }
 
 class _AppStatsPageState extends ConsumerState<AppStatsPage> {
-  bool _loading = true;
-  List<Map<String, dynamic>> _stats = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchStats();
-  }
-
-  Future<void> _fetchStats() async {
-    final service = GetIt.instance<MethodChannelServiceInterface>();
-
-    // Get apps to have names/icons
-    final apps = await ref.read(installedAppsProvider.future);
-    final appsMap = {for (var app in apps) app.packageName: app};
-
-    // Get usage stats for the last 24 hours
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final yesterday = DateTime.now()
-        .subtract(Duration(days: 1))
-        .millisecondsSinceEpoch;
-
-    final usageMap = await service.getAppUsageStats(
-      beginTime: yesterday,
-      endTime: now,
-    );
-
-    final statsList = <Map<String, dynamic>>[];
-    usageMap.forEach((pkg, data) {
-      final app = appsMap[pkg];
-      if (app != null) {
-        final timeMs = data['totalTimeInForeground'] as int? ?? 0;
-        if (timeMs > 0) {
-          statsList.add({
-            'appName': app.appName,
-            'packageName': pkg,
-            'icon': app.icon,
-            'totalTimeInForeground': timeMs,
-          });
-        }
-      }
-    });
-
-    // Sort by time descending
-    statsList.sort(
-      (a, b) => (b['totalTimeInForeground'] as num).compareTo(
-        a['totalTimeInForeground'] as num,
-      ),
-    );
-
-    if (mounted) {
-      setState(() {
-        _stats = statsList;
-        _loading = false;
-      });
-    }
-  }
-
   String _formatDuration(int ms) {
     final duration = Duration(milliseconds: ms);
     final h = duration.inHours;
@@ -85,66 +25,121 @@ class _AppStatsPageState extends ConsumerState<AppStatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final usageAsync = ref.watch(appUsageProvider);
+    final appsAsync = ref.watch(installedAppsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('App Usage (Last 24h)'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() => _loading = true);
-              _fetchStats();
-            },
+            onPressed: () => ref.read(appUsageProvider.notifier).refresh(),
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _stats.isEmpty
-          ? const Center(child: Text('No usage data found for the last 24h.'))
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _stats.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final item = _stats[index];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  leading: item['icon'] != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(
-                            item['icon'] as Uint8List,
-                            width: 44,
-                            height: 44,
+      body: usageAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+        data: (state) {
+          final usageList = state.usageList;
+          if (usageList.isEmpty) {
+            return const Center(
+              child: Text('No usage data found for the last 24h.'),
+            );
+          }
+
+          return appsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) =>
+                Center(child: Text('Error loading app info: $err')),
+            data: (apps) {
+              final appsMap = {for (var app in apps) app.packageName: app};
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: usageList.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final usage = usageList[index];
+                  final app = appsMap[usage.packageName];
+
+                  if (app == null) return const SizedBox.shrink();
+
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AppSessionsDetailPage(
+                            appName: app.appName,
+                            packageName: app.packageName,
+                            sessions: usage.sessions,
+                            beginTime: state.beginTime,
+                            endTime: state.endTime,
+                            icon: app.icon,
                           ),
-                        )
-                      : const Icon(Icons.android, size: 44),
-                  title: Text(
-                    item['appName'],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    item['packageName'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withOpacity(0.6),
+                        ),
+                      );
+                    },
+                    leading: app.icon != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              app.icon!,
+                              width: 48,
+                              height: 48,
+                            ),
+                          )
+                        : const Icon(Icons.android, size: 48),
+                    title: Text(
+                      app.appName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  trailing: Text(
-                    _formatDuration(item['totalTimeInForeground'] as int),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.deepPurpleAccent,
+                    subtitle: Row(
+                      children: [
+                        Text(
+                          app.packageName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                );
-              },
-            ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatDuration(usage.totalTimeMs),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
