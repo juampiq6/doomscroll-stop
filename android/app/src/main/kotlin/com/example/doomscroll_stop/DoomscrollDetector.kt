@@ -45,6 +45,12 @@ class DoomscrollDetector(
     val trackedPackages: Set<String>
         get() = timeLimits.keys
 
+    private fun totalSessionTime(pkg: String, now: Long): Long {
+        val activeSession =
+                if (lastSessionStartEvent[pkg] != null) now - lastSessionStartEvent[pkg]!! else 0L
+        return (accumulatedActiveSessionTime[pkg] ?: 0L) + activeSession
+    }
+
     /** Restarts the session and saves last activity start time. */
     fun restartSession(pkg: String, timestamp: Long) {
         notifiedPackages.remove(pkg)
@@ -54,7 +60,7 @@ class DoomscrollDetector(
     }
 
     /** Processes usage events chronologically to build session state. */
-    fun processEvents(events: List<UsageStatsProvider.AppEvent>) {
+    fun processEvents(events: List<UsageStatsProvider.AppEvent>, now: Long) {
         for (event in events) {
             val pkg = event.packageName
 
@@ -69,7 +75,7 @@ class DoomscrollDetector(
                                     (event.timestamp - lastStopEvent) > appJumpThresholdMs
                     ) {
                         // New session — resets accumulated time
-                        accumulatedActiveSessionTime[pkg] = 0L
+                        accumulatedActiveSessionTime[pkg] = now - event.timestamp
                         lastSessionStopEvent[pkg] = 0L
                         notifiedPackages.remove(pkg)
                         Log.d(TAG, "[$pkg] New session detected")
@@ -99,10 +105,11 @@ class DoomscrollDetector(
      * Checks all tracked apps to see if any have exceeded their time limit. Returns the package
      * name of the app that triggered an alert, or null if none.
      */
-    fun performCheck(): String? {
+    fun performCheck(now: Long): String? {
         for (pkg in timeLimits.keys) {
             val limitMs = (timeLimits[pkg] ?: continue) * 1000L
-            val accumulated = accumulatedActiveSessionTime[pkg] ?: 0L
+            val accumulated = totalSessionTime(pkg, now)
+            Log.d(TAG, "[$pkg] accumulated=$accumulated, limit=$limitMs")
 
             if (accumulated >= limitMs && pkg !in notifiedPackages) {
                 Log.d(
@@ -123,25 +130,30 @@ class DoomscrollDetector(
      * remaining time, clamped to at least [MIN_CHECK_INTERVAL_MS]. If no accumulated time exists
      * for an app, it defaults to 0.
      */
-    fun computeNextCheckDelay(): Long {
+    fun computeNextCheckDelay(now: Long): Long {
 
-        var minRemaining = Long.MAX_VALUE
+        var criticalMinRemaining: Long? = null
 
         for ((pkg, limitSec) in timeLimits) {
             val limitMs = limitSec * 1000L
-            val accumulated = accumulatedActiveSessionTime[pkg] ?: 0L
-            val remaining = limitMs - accumulated
+            if (criticalMinRemaining == null || limitMs < criticalMinRemaining) {
+                criticalMinRemaining = limitMs
+            }
+            val sessionTime = totalSessionTime(pkg, now)
+
+            // limit should always be greater than accumulated
+            val remaining = limitMs - sessionTime
 
             Log.d(
                     TAG,
-                    "[$pkg] remaining=${remaining}ms (limit=${limitMs}ms, used=${accumulated}ms)"
+                    "[$pkg] next check in ${remaining}ms (limit=${limitMs}ms, session=${sessionTime}ms)"
             )
 
-            if (remaining < minRemaining) {
-                minRemaining = remaining
+            if (remaining < criticalMinRemaining) {
+                criticalMinRemaining = remaining
             }
         }
 
-        return minRemaining
+        return criticalMinRemaining!!
     }
 }
