@@ -4,6 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:doomscroll_stop/models/app_session.dart';
 import 'package:doomscroll_stop/features/stats/widgets/app_session_card.dart';
 
+class AppSessionDetailArgs {
+  final String appName;
+  final String packageName;
+  final Uint8List? icon;
+  final List<AppSession> sessions;
+  final int beginTime;
+  final int endTime;
+
+  const AppSessionDetailArgs({
+    required this.appName,
+    required this.packageName,
+    required this.sessions,
+    required this.beginTime,
+    required this.endTime,
+    this.icon,
+  });
+}
+
 class AppSessionsDetailPage extends StatelessWidget {
   final String appName;
   final String packageName;
