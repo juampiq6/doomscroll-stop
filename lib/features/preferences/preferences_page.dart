@@ -1,3 +1,4 @@
+import 'package:doomscroll_stop/features/preferences/jump_threshold_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doomscroll_stop/features/preferences/app_selection_sheet.dart';
@@ -33,6 +34,11 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
       appBar: AppBar(
         title: const Text('Tracked Apps'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Switch threshold',
+            onPressed: () => JumpThresholdModal.show(context),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {

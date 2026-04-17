@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const _defaultJumpThresholdMs = 60000;
+
 class LocalStorageService implements LocalStorageInterface {
   final SharedPreferences _sharedPreferences;
   LocalStorageService(this._sharedPreferences);
@@ -17,5 +19,15 @@ class LocalStorageService implements LocalStorageInterface {
     final r = _sharedPreferences.getString('appLimits');
     if (r == null) return {};
     return (jsonDecode(r) as Map<String, dynamic>).cast<String, int>();
+  }
+
+  @override
+  Future<void> saveJumpThresholdMs(int ms) async {
+    await _sharedPreferences.setInt('jumpThresholdMs', ms);
+  }
+
+  @override
+  Future<int> getJumpThresholdMs() async {
+    return _sharedPreferences.getInt('jumpThresholdMs') ?? _defaultJumpThresholdMs;
   }
 }
