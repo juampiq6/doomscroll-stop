@@ -1,3 +1,4 @@
+import 'package:doomscroll_stop/providers/app_jump_threshold_provider.dart';
 import 'package:doomscroll_stop/repositories/preferences_repository.dart';
 import 'package:doomscroll_stop/services/db_service/local_storage_service_interface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +6,6 @@ import 'package:doomscroll_stop/providers/doomscroll_background_service_provider
 import 'package:get_it/get_it.dart';
 
 const maxMinutes = 300;
-const defaultAppJumpThresholdMs = 30000;
 
 class AppPreferencesNotifier extends AsyncNotifier<Map<String, int>> {
   @override
@@ -39,7 +39,8 @@ class AppPreferencesNotifier extends AsyncNotifier<Map<String, int>> {
     await serviceNotifier.stop();
 
     if (currentValue.isNotEmpty) {
-      await serviceNotifier.start(currentValue, defaultAppJumpThresholdMs);
+      final thresholdMs = await ref.read(appJumpThresholdProvider.future);
+      await serviceNotifier.start(currentValue, thresholdMs);
     }
   }
 }
