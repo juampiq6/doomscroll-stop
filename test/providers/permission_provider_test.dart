@@ -243,7 +243,7 @@ void main() {
   group('PermissionProvider - Usage', () {
     test('initially granted', () async {
       when(
-        () => mockService.isUsagePermissionGranted(),
+        () => mockService.hasUsagePermission(),
       ).thenAnswer((_) async => true);
 
       final container = makeContainer();
@@ -258,7 +258,7 @@ void main() {
 
     test('initially denied', () async {
       when(
-        () => mockService.isUsagePermissionGranted(),
+        () => mockService.hasUsagePermission(),
       ).thenAnswer((_) async => false);
 
       final container = makeContainer();
@@ -274,13 +274,13 @@ void main() {
     test('requestPermission flow: denied -> openSettings -> granted', () async {
       // 1. Initial: denied
       when(
-        () => mockService.isUsagePermissionGranted(),
+        () => mockService.hasUsagePermission(),
       ).thenAnswer((_) async => false);
 
       when(() => mockService.openUsageSettings()).thenAnswer((_) async {
         // Mock user manually granting in settings
         when(
-          () => mockService.isUsagePermissionGranted(),
+          () => mockService.hasUsagePermission(),
         ).thenAnswer((_) async => true);
       });
 
@@ -299,47 +299,51 @@ void main() {
           .requestPermission();
 
       // Final state
-      final finalState =
-          container.read(permissionProvider(PermissionType.usage)).value!;
+      final finalState = container
+          .read(permissionProvider(PermissionType.usage))
+          .value!;
       expect(finalState.isGranted, true);
 
       verify(() => mockService.openUsageSettings()).called(1);
     });
 
-    test('requestPermission flow: denied -> openSettings -> remains denied',
-        () async {
-      // 1. Initial: denied
-      when(
-        () => mockService.isUsagePermissionGranted(),
-      ).thenAnswer((_) async => false);
-
-      when(() => mockService.openUsageSettings()).thenAnswer((_) async {
-        // Mock user NOT granting in settings
+    test(
+      'requestPermission flow: denied -> openSettings -> remains denied',
+      () async {
+        // 1. Initial: denied
         when(
-          () => mockService.isUsagePermissionGranted(),
+          () => mockService.hasUsagePermission(),
         ).thenAnswer((_) async => false);
-      });
 
-      final container = makeContainer();
-      addTearDown(container.dispose);
+        when(() => mockService.openUsageSettings()).thenAnswer((_) async {
+          // Mock user NOT granting in settings
+          when(
+            () => mockService.hasUsagePermission(),
+          ).thenAnswer((_) async => false);
+        });
 
-      // Initial build
-      final initialState = await container.read(
-        permissionProvider(PermissionType.usage).future,
-      );
-      expect(initialState.isDenied, true);
+        final container = makeContainer();
+        addTearDown(container.dispose);
 
-      // Request
-      await container
-          .read(permissionProvider(PermissionType.usage).notifier)
-          .requestPermission();
+        // Initial build
+        final initialState = await container.read(
+          permissionProvider(PermissionType.usage).future,
+        );
+        expect(initialState.isDenied, true);
 
-      // Final state - remains denied
-      final finalState =
-          container.read(permissionProvider(PermissionType.usage)).value!;
-      expect(finalState.isDenied, true);
+        // Request
+        await container
+            .read(permissionProvider(PermissionType.usage).notifier)
+            .requestPermission();
 
-      verify(() => mockService.openUsageSettings()).called(1);
-    });
+        // Final state - remains denied
+        final finalState = container
+            .read(permissionProvider(PermissionType.usage))
+            .value!;
+        expect(finalState.isDenied, true);
+
+        verify(() => mockService.openUsageSettings()).called(1);
+      },
+    );
   });
 }
