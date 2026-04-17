@@ -18,13 +18,13 @@ class AppPreferencesNotifier extends AsyncNotifier<Map<String, int>> {
   void updateLimit(String packageName, int seconds) {
     final newLimits = Map<String, int>.from(state.value!);
     newLimits[packageName] = seconds;
-    state = AsyncValue.data(state.value!);
+    state = AsyncValue.data(newLimits);
   }
 
   void removeApp(String packageName) {
     final newLimits = Map<String, int>.from(state.value!);
     newLimits.remove(packageName);
-    state = AsyncValue.data(state.value!);
+    state = AsyncValue.data(newLimits);
   }
 
   Future<void> saveAndApply() async {
