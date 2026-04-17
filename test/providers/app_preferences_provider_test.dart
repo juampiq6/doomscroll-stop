@@ -1,3 +1,4 @@
+import 'package:doomscroll_stop/providers/app_jump_threshold_provider.dart';
 import 'package:doomscroll_stop/providers/app_preferences_provider.dart';
 import 'package:doomscroll_stop/providers/doomscroll_background_service_provider.dart';
 import 'package:doomscroll_stop/repositories/preferences_repository.dart';
@@ -148,6 +149,7 @@ void main() {
           () => mockRepo.getPreferences(),
         ).thenAnswer((_) async => {'com.app.a': 60});
         when(() => mockStorage.savePreferences(any())).thenAnswer((_) async {});
+        when(() => mockStorage.getJumpThresholdMs()).thenAnswer((_) async => 60000);
         when(
           () => mockService.isServiceRunning(),
         ).thenAnswer((_) async => false);
@@ -163,8 +165,8 @@ void main() {
         addTearDown(container.dispose);
 
         await container.read(appPreferencesProvider.future);
-        // Ensure background service provider is initialized too
         await container.read(doomscrollBackgroundServiceProvider.future);
+        await container.read(appJumpThresholdProvider.future);
 
         await container.read(appPreferencesProvider.notifier).saveAndApply();
 
@@ -173,7 +175,7 @@ void main() {
         verify(
           () => mockService.startDetectionService(
             appTimeLimits: {'com.app.a': 60},
-            appJumpThresholdMs: defaultAppJumpThresholdMs,
+            appJumpThresholdMs: 60000,
           ),
         ).called(1);
       },
